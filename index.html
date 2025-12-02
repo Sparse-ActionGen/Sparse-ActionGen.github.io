@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sparse ActionGen: Accelerating Diffusion Policy with Real-Time Pruning</title>
+    <!-- 引入 Tailwind CSS (无需安装，直接通过网络加载) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Lucide 图标库 -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- 自定义一些样式 -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .tab-content { display: none; animation: fadeIn 0.3s ease-in-out; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- 导航栏 -->
+    <nav class="w-full bg-white/90 backdrop-blur-md border-b border-gray-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <span class="font-bold text-xl tracking-tighter text-gray-800">SAG</span>
+            <div class="flex gap-4 md:gap-6 text-sm font-medium text-gray-600">
+                <a href="#abstract" class="hover:text-blue-600 transition-colors">Abstract</a>
+                <a href="#method" class="hover:text-blue-600 transition-colors">Method</a>
+                <a href="#results" class="hover:text-blue-600 transition-colors">Results</a>
+                <a href="#demos" class="hover:text-blue-600 transition-colors">Demos</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto px-4 py-12 space-y-24">
+
+        <!-- Hero 区域 -->
+        <section class="text-center space-y-8">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-gray-900 tracking-tight leading-tight">
+                <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
+                    Sparse ActionGen
+                </span>
+                <br />
+                <span class="text-3xl md:text-5xl text-gray-800 mt-3 block">
+                    Accelerating Diffusion Policy with Real-Time Pruning
+                </span>
+            </h1>
+
+            <div class="flex flex-wrap justify-center gap-4 text-lg text-blue-600 font-medium">
+                <span>ICLR 2026 (Under Review)</span>
+            </div>
+
+            <div class="flex justify-center gap-4 pt-4">
+                <a href="https://openreview.net/pdf?id=mCoJN10RV5" class="flex items-center gap-2 px-6 py-2 rounded-full font-medium bg-gray-900 text-white hover:bg-gray-700 shadow-lg hover:shadow-xl transition-all">
+                    <i data-lucide="file-text" width="18"></i> Paper
+                </a>
+                <a href="#" class="flex items-center gap-2 px-6 py-2 rounded-full font-medium bg-gray-200 text-gray-800 hover:bg-gray-300 transition-all">
+                    <i data-lucide="github" width="18"></i> Code (Coming Soon)
+                </a>
+                <a href="#demos" class="flex items-center gap-2 px-6 py-2 rounded-full font-medium bg-gray-200 text-gray-800 hover:bg-gray-300 transition-all">
+                    <i data-lucide="youtube" width="18"></i> Video
+                </a>
+            </div>
+        </section>
+
+        <!-- Abstract -->
+        <section id="abstract" class="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800 tracking-tight">Abstract</h2>
+            <p class="text-lg text-gray-600 leading-relaxed text-justify max-w-4xl mx-auto">
+                Diffusion Policy has dominated action generation due to its strong capabilities for modeling multi-modal action distributions, but its multi-step denoising processes make it impractical for real-time visuomotor control. Existing caching-based acceleration methods typically rely on static schedules that fail to adapt to the dynamics of robot-environment interactions, thereby leading to suboptimal performance. In this paper, we propose <strong>Sparse ActionGen (SAG)</strong> for extremely sparse action generation. To accommodate the iterative interactions, SAG customizes a rollout-adaptive prune-then-reuse mechanism that first identifies prunable computations globally and then reuses cached activations to substitute them during action diffusion. To capture the rollout dynamics, SAG parameterizes an observation-conditioned diffusion pruner for environment-aware adaptation and instantiates it with a highly parameter- and inference-efficient design for real-time prediction. Furthermore, SAG introduces a one-for-all reusing strategy that reuses activations across both timesteps and blocks in a zig-zag manner. Extensive experiments demonstrate that SAG achieves up to <strong>4x generation speedup</strong> without sacrificing performance.
+            </p>
+        </section>
+
+        <!-- Method -->
+        <section id="method" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800 tracking-tight">Methodology</h2>
+            
+            <!-- Method Figure -->
+            <div class="bg-white p-2 rounded-2xl shadow-lg border border-gray-100 mb-8 overflow-hidden">
+                <!-- ⬇️⬇️⬇️ 请确保图片路径正确 ⬇️⬇️⬇️ -->
+                <img src="figures/framework_v8.jpg" alt="Method Overview" class="w-full h-auto rounded-xl">
+            </div>
+
+            <div class="grid md:grid-cols-2 gap-8 text-gray-700 leading-relaxed">
+                <div class="bg-blue-50 p-6 rounded-xl border border-blue-100">
+                    <h3 class="font-bold text-xl mb-3 text-blue-800 flex items-center gap-2">
+                        <i data-lucide="scissors" width="20"></i> Rollout-Adaptive Pruning
+                    </h3>
+                    <p>
+                        Unlike static caching, SAG customizes a prune-then-reuse mechanism that adapts to robot-environment interactions. It uses a specialized <strong>Observation-Conditioned Diffusion Pruner</strong> to predict sparsity patterns in real-time.
+                    </p>
+                </div>
+                <div class="bg-indigo-50 p-6 rounded-xl border border-indigo-100">
+                    <h3 class="font-bold text-xl mb-3 text-indigo-800 flex items-center gap-2">
+                        <i data-lucide="repeat" width="20"></i> One-for-All Reusing
+                    </h3>
+                    <p>
+                        We challenge the block-wise caching paradigm. SAG introduces a strategy that reuses activations across both <strong>timesteps and blocks</strong> in a zig-zag manner, minimizing global redundancy and maximizing speed.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results (Javascript Tab System) -->
+        <section id="results" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800 tracking-tight">Experimental Results</h2>
+            <p class="text-center text-gray-600 mb-8 max-w-3xl mx-auto">
+                We evaluate SAG on multiple robotic benchmarks including RoboMimic and Franka Kitchen. SAG achieves state-of-the-art speedup while maintaining or even improving success rates.
+            </p>
+
+            <div class="max-w-5xl mx-auto">
+                <!-- Tab Buttons -->
+                <div class="flex justify-center gap-4 mb-6">
+                    <button onclick="switchTab('PH')" id="btn-PH" class="px-4 py-2 rounded-lg font-medium transition-all bg-blue-600 text-white shadow-md">PH (Proficient Human)</button>
+                    <button onclick="switchTab('MH')" id="btn-MH" class="px-4 py-2 rounded-lg font-medium transition-all bg-white text-gray-600 hover:bg-gray-100">MH (Mixed Human)</button>
+                    <button onclick="switchTab('Kitchen')" id="btn-Kitchen" class="px-4 py-2 rounded-lg font-medium transition-all bg-white text-gray-600 hover:bg-gray-100">Kitchen (Multi-Stage)</button>
+                </div>
+
+                <!-- Tab Contents -->
+                <div class="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+                    
+                    <!-- PH Table -->
+                    <div id="tab-PH" class="tab-content active p-4 overflow-x-auto">
+                        <h3 class="text-center font-bold text-gray-800 mb-4">Benchmark on Proficient Human (PH) Demonstration Data</h3>
+                        <div class="min-w-[600px] text-sm md:text-base">
+                            <!-- Header -->
+                            <div class="grid grid-cols-6 gap-2 p-3 font-bold bg-gray-100 border-b-2 border-gray-300">
+                                <div class="col-span-1">Method</div>
+                                <div class="col-span-1 text-center">Lift</div>
+                                <div class="col-span-1 text-center">Can</div>
+                                <div class="col-span-1 text-center">Square</div>
+                                <div class="col-span-1 text-center">Transport</div>
+                                <div class="col-span-1 text-center">Tool</div>
+                            </div>
+                            <!-- Rows -->
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">Full Precision</div><div class="text-center">100</div><div class="text-center">94</div><div class="text-center">90</div><div class="text-center">80</div><div class="text-center">50</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">Efficient VLA</div><div class="text-center">100</div><div class="text-center">74</div><div class="text-center">90</div><div class="text-center">60</div><div class="text-center">38</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">L2C</div><div class="text-center">100</div><div class="text-center">86</div><div class="text-center">26</div><div class="text-center">66</div><div class="text-center">2</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">BAC</div><div class="text-center">100</div><div class="text-center">94</div><div class="text-center">90</div><div class="text-center">78</div><div class="text-center">54</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 bg-blue-50/50 font-semibold text-blue-900 border-b border-gray-100 hover:bg-blue-50"><div class="font-bold">SAG (Ours)</div><div class="text-center">100 (3.72x)</div><div class="text-center">94 (3.70x)</div><div class="text-center">94 (3.64x)</div><div class="text-center">84 (3.44x)</div><div class="text-center">54 (3.65x)</div></div>
+                        </div>
+                    </div>
+
+                    <!-- MH Table -->
+                    <div id="tab-MH" class="tab-content p-4 overflow-x-auto">
+                        <h3 class="text-center font-bold text-gray-800 mb-4">Benchmark on Mixed Human (MH) Demonstration Data</h3>
+                        <div class="min-w-[600px] text-sm md:text-base">
+                            <div class="grid grid-cols-6 gap-2 p-3 font-bold bg-gray-100 border-b-2 border-gray-300">
+                                <div class="col-span-1">Method</div>
+                                <div class="col-span-1 text-center">Lift</div>
+                                <div class="col-span-1 text-center">Square</div>
+                                <div class="col-span-1 text-center">Can</div>
+                                <div class="col-span-1 text-center">Transport</div>
+                                <div class="col-span-1 text-center">Avg Speedup</div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">Full Precision</div><div class="text-center">100</div><div class="text-center">74</div><div class="text-center">94</div><div class="text-center">56</div><div class="text-center">-</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 bg-blue-50/50 font-semibold text-blue-900 hover:bg-blue-50"><div class="font-bold">SAG (Ours)</div><div class="text-center">100</div><div class="text-center">96</div><div class="text-center">86</div><div class="text-center">62</div><div class="text-center">3.77x</div></div>
+                        </div>
+                    </div>
+
+                    <!-- Kitchen Table -->
+                    <div id="tab-Kitchen" class="tab-content p-4 overflow-x-auto">
+                        <h3 class="text-center font-bold text-gray-800 mb-4">Benchmark on Franka Kitchen (Multi-Stage)</h3>
+                        <div class="min-w-[600px] text-sm md:text-base">
+                            <div class="grid grid-cols-6 gap-2 p-3 font-bold bg-gray-100 border-b-2 border-gray-300">
+                                <div class="col-span-1">Method</div>
+                                <div class="col-span-1 text-center">Kit_p1</div>
+                                <div class="col-span-1 text-center">Kit_p2</div>
+                                <div class="col-span-1 text-center">Kit_p3</div>
+                                <div class="col-span-1 text-center">Kit_p4</div>
+                                <div class="col-span-1 text-center">Avg Speedup</div>
+                            </div>
+                            <div class="grid grid-cols-6 gap-2 p-3 border-b border-gray-100 hover:bg-gray-50"><div class="font-medium text-gray-700">Full Precision</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">-</div></div>
+                            <div class="grid grid-cols-6 gap-2 p-3 bg-blue-50/50 font-semibold text-blue-900 hover:bg-blue-50"><div class="font-bold">SAG (Ours)</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">100</div><div class="text-center">4.03x</div></div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+
+        <!-- Demos Section -->
+        <section id="demos" class="scroll-mt-24">
+            <h2 class="text-3xl md:text-4xl font-bold text-center mb-8 text-gray-800 tracking-tight">Real Robot Experiments</h2>
+            <p class="text-center text-gray-600 mb-10 max-w-3xl mx-auto">
+                Qualitative results showing the robust performance of SAG under extreme sparsity.
+            </p>
+
+            <div class="space-y-12">
+                
+                <!-- Task Demos -->
+                <div>
+                   <h3 class="text-xl font-bold text-gray-700 mb-4 flex items-center gap-2">
+                     <i data-lucide="play-circle" class="text-blue-600"></i> Task Demos
+                   </h3>
+                   <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                     <!-- Video 1 -->
+                     <div class="flex flex-col gap-2">
+                        <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-video shadow-sm border border-gray-200">
+                            <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                <source src="./videos/demo1.mp4" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="text-center">
+                            <span class="font-semibold text-gray-700 block">Original</span>
+                        </div>
+                     </div>
+
+                     <!-- Video 2 -->
+                     <div class="flex flex-col gap-2">
+                        <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-video shadow-sm border border-gray-200">
+                            <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                <source src="./videos/demo2.mp4" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="text-center">
+                            <span class="font-semibold text-gray-700 block">DDIM</span>
+                        </div>
+                     </div>
+
+                     <!-- Video 3 -->
+                     <div class="flex flex-col gap-2">
+                        <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-video shadow-sm border border-gray-200">
+                            <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                <source src="./videos/demo3.mp4" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="text-center">
+                            <span class="font-semibold text-gray-700 block">Streaming Policy</span>
+                        </div>
+                     </div>
+
+                     <!-- Video 4 -->
+                     <div class="flex flex-col gap-2">
+                        <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-video shadow-sm border border-gray-200">
+                            <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                <source src="./videos/demo4.mp4" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div>
+                        <div class="text-center">
+                            <span class="font-semibold text-gray-700 block">SAG</span>
+                        </div>
+                     </div>
+                   </div>
+                </div>
+
+                <!-- Mask Visualization - Single Column Layout -->
+                <div>
+                   <h3 class="text-xl font-bold text-gray-700 mb-6 flex items-center gap-2">
+                     <i data-lucide="chevron-down" class="text-indigo-600"></i> Visualization for Real-time Pruning
+                   </h3>
+                   
+                   <div class="flex flex-col gap-10">
+                     
+                     <!-- 80% Pruning Rate Section -->
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                          <span class="w-3 h-8 bg-blue-500 rounded-sm mr-3"></span>
+                          Target Pruning Rate: 80%
+                        </h4>
+                        <!-- Changed grid-cols-1 md:grid-cols-2 to grid-cols-1 for single column -->
+                        <div class="grid grid-cols-1 gap-6">
+                            <!-- Mask Vis 1 (80%) -->
+                            <div class="flex flex-col gap-2">
+                                <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-[3.6/1] shadow-sm border border-gray-200">
+                                    <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                        <source src="videos/session_20251202_232100_combined.mp4" type="video/mp4">
+                                    </video>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs text-gray-700 block">Rollout A</span>
+                                </div>
+                             </div>
+
+                             <!-- Mask Vis 2 (80%) -->
+                             <div class="flex flex-col gap-2">
+                                <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-[3.6/1] shadow-sm border border-gray-200">
+                                    <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                        <source src="videos/session_20251202_234615_combined.mp4" type="video/mp4">
+                                    </video>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs text-gray-700 block">Rollout B</span>
+                                </div>
+                             </div>
+                        </div>
+                     </div>
+
+                     <!-- 90% Pruning Rate Section -->
+                     <div class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                        <h4 class="text-lg font-bold text-gray-800 mb-4 flex items-center">
+                          <span class="w-3 h-8 bg-indigo-500 rounded-sm mr-3"></span>
+                          Target Pruning Rate: 90% (Extreme Sparsity)
+                        </h4>
+                        <!-- Changed grid-cols-1 md:grid-cols-2 to grid-cols-1 for single column -->
+                        <div class="grid grid-cols-1 gap-6">
+                             <!-- Mask Vis 1 (90%) -->
+                             <div class="flex flex-col gap-2">
+                                <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-[3.6/1] shadow-sm border border-gray-200">
+                                    <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                        <source src="videos/session_20251202_232810_combined.mp4" type="video/mp4">
+                                    </video>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs text-gray-700 block">Rollout A</span>
+                                </div>
+                             </div>
+                             
+                             <!-- Mask Vis 2 (90%) -->
+                             <div class="flex flex-col gap-2">
+                                <div class="relative group bg-gray-100 rounded-xl overflow-hidden aspect-[3.6/1] shadow-sm border border-gray-200">
+                                    <video class="w-full h-full object-cover" autoplay loop muted playsinline controls>
+                                        <source src="videos/session_20251202_234123_combined.mp4" type="video/mp4">
+                                    </video>
+                                </div>
+                                <div class="text-center">
+                                    <span class="text-xs text-gray-700 block">Rollout B</span>
+                                </div>
+                             </div>
+                        </div>
+                     </div>
+
+                   </div>
+
+                   <p class="mt-6 text-gray-600 text-sm text-center max-w-2xl mx-auto">
+                     SAG maintains high task success rates even when skipping over 90% of the computations.
+                   </p>
+                </div>
+
+            </div>
+        </section>
+
+
+    </main>
+
+    <!-- 简单的脚本处理 Tabs 和 Icons -->
+    <script>
+        // 初始化图标
+        lucide.createIcons();
+
+        // 简单的 Tab 切换逻辑
+        function switchTab(tabId) {
+            // 隐藏所有 tab 内容
+            document.querySelectorAll('.tab-content').forEach(el => {
+                el.classList.remove('active');
+            });
+            // 移除所有按钮激活状态
+            ['PH', 'MH', 'Kitchen'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('bg-white', 'text-gray-600');
+            });
+
+            // 显示目标 tab
+            document.getElementById(`tab-${tabId}`).classList.add('active');
+            
+            // 激活目标按钮
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('bg-white', 'text-gray-600');
+            activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
+        }
+    </script>
+</body>
+</html>
